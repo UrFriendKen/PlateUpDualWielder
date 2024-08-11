@@ -111,23 +111,18 @@ namespace KitchenDualWielder.Patches
             tempDurationTool = default;
             float factor = 1f;
             Entity interactor = beingActedOnBy.Interactor;
-            Main.LogInfo($"interactor.Index = {interactor.Index}");
             if (PatchController.StaticRequire(interactor, out CToolUser toolUser) &&
                 PatchController.StaticRequire(toolUser.CurrentTool, out CDurationTool durationTool1) &&
                 durationTool1.Type == relevantToolType)
             {
-                Main.LogInfo("Tool1");
                 hasRelevantTool = true; 
-                Main.LogWarning(durationTool1.Factor);
                 factor *= durationTool1.Factor;
             }
             if (PatchController.StaticRequire(interactor, out CToolUserSecondHand toolUserSecondHand) &&
                 PatchController.StaticRequire(toolUserSecondHand.CurrentTool, out CDurationTool durationTool2) &&
                 durationTool2.Type == relevantToolType)
             {
-                Main.LogInfo("Tool2");
                 hasRelevantTool = true;
-                Main.LogWarning(durationTool2.Factor);
                 factor *= durationTool2.Factor;
             }
             if (hasRelevantTool)
@@ -136,7 +131,6 @@ namespace KitchenDualWielder.Patches
                 {
                     Factor = factor
                 };
-                Main.LogInfo($"Resulting Factor: {factor}");
             }
             return hasRelevantTool;
         }

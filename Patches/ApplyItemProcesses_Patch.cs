@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Kitchen;
+using KitchenData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,11 +24,8 @@ namespace KitchenDualWielder.Patches
 
         static readonly List<OpCode> OPCODES_TO_MATCH = new List<OpCode>()
         {
-            OpCodes.Ldarg_0,
             OpCodes.Ldloc_S,
             OpCodes.Ldfld,
-            OpCodes.Ldloca_S,
-            OpCodes.Call,
             OpCodes.Brfalse,
             OpCodes.Ldarg_0,
             OpCodes.Ldloc_S,
@@ -35,14 +33,20 @@ namespace KitchenDualWielder.Patches
             OpCodes.Ldloca_S,
             OpCodes.Call,
             OpCodes.Brfalse,
+            OpCodes.Ldarg_0,
             OpCodes.Ldloc_S,
             OpCodes.Ldfld,
-            OpCodes.Ldloc_3,
-            OpCodes.Ldfld,
-            OpCodes.Bne_Un,
+            OpCodes.Ldloca_S,
+            OpCodes.Call,
+            OpCodes.Brfalse,
             OpCodes.Ldloc_S,
-            OpCodes.Ldloc_S,
             OpCodes.Ldfld,
+            OpCodes.Ldloc_S,
+            OpCodes.Ldfld,      //
+            OpCodes.Bne_Un,     //
+            OpCodes.Ldloc_S,    //
+            OpCodes.Ldloc_S,    //
+            OpCodes.Ldfld,      //
             OpCodes.Add,
             OpCodes.Stloc_S,
             OpCodes.Br
@@ -51,33 +55,38 @@ namespace KitchenDualWielder.Patches
         // null is ignore
         static readonly List<object> OPERANDS_TO_MATCH = new List<object>()
         {
+            null,
+            typeof(CItemUndergoingProcess).GetField("Process", BindingFlags.Public | BindingFlags.Instance)
         };
 
         static readonly List<OpCode> MODIFIED_OPCODES = new List<OpCode>()
         {
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
-            OpCodes.Nop,
             OpCodes.Ldloc_S,
-            OpCodes.Ldloc_3,
             OpCodes.Ldfld,
-            OpCodes.Ldloc_S,
-            OpCodes.Call,
+            OpCodes.Brfalse,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Nop,
+            OpCodes.Ldloc_S,    // 6
+            OpCodes.Ldloc_S,    // Unchanged?
+            OpCodes.Ldfld,      // typeof(CItemUndergoingProcess).GetField("Process", BindingFlags.Public | BindingFlags.Instance)
+            OpCodes.Ldloc_S,    // 20
+            OpCodes.Call,       // typeof(ApplyItemProcesses_Patch).GetMethod("GetFactor", BindingFlags.NonPublic | BindingFlags.Static)
             OpCodes.Add,
             OpCodes.Stloc_S,
-            OpCodes.Br_S
+            OpCodes.Br
         };
 
         // null is ignore
@@ -98,35 +107,41 @@ namespace KitchenDualWielder.Patches
             null,
             null,
             null,
-            6,
             null,
+            null,
+            null,
+            8,
+            5,
             typeof(CItemUndergoingProcess).GetField("Process", BindingFlags.Public | BindingFlags.Instance),
-            20,
+            21,
             typeof(ApplyItemProcesses_Patch).GetMethod("GetFactor", BindingFlags.NonPublic | BindingFlags.Static)
         };
 
         static float GetFactor(int process, CBeingActedOnBy beingActedOnBy)
         {
+            try
+            {
+                Main.LogInfo(process);
+                Main.LogInfo($"Looking for {GameData.Main.Get<Process>(process).name} process tools");
+            }
+            catch (Exception e) { }
             Entity interactor = beingActedOnBy.Interactor;
             float factor = 1f;
-            Main.LogInfo($"interactor.Index = {interactor.Index}");
-            if (PatchController.StaticRequire(interactor, out CToolUser toolUser) &&
+            if (process != 0)
+            {
+                if (PatchController.StaticRequire(interactor, out CToolUser toolUser) &&
                 PatchController.StaticRequire(toolUser.CurrentTool, out CProcessTool processTool1) &&
                 processTool1.Process == process)
-            {
-                Main.LogInfo("Tool1");
-                Main.LogWarning(processTool1.Factor);
-                factor *= processTool1.Factor;
+                {
+                    factor *= processTool1.Factor;
+                }
+                if (PatchController.StaticRequire(interactor, out CToolUserSecondHand toolUserSecondHand) &&
+                    PatchController.StaticRequire(toolUserSecondHand.CurrentTool, out CProcessTool processTool2) &&
+                    processTool2.Process == process)
+                {
+                    factor *= processTool2.Factor;
+                }
             }
-            if (PatchController.StaticRequire(interactor, out CToolUserSecondHand toolUserSecondHand) &&
-                PatchController.StaticRequire(toolUserSecondHand.CurrentTool, out CProcessTool processTool2) &&
-                processTool2.Process == process)
-            {
-                Main.LogInfo("Tool2");
-                Main.LogWarning(processTool2.Factor);
-                factor *= processTool2.Factor;
-            }
-            Main.LogInfo($"Resulting Factor: {factor}");
             return factor;
         }
 

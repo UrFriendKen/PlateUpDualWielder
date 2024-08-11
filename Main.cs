@@ -7,7 +7,7 @@ namespace KitchenDualWielder
     {
         public const string MOD_GUID = $"IcedMilo.PlateUp.{MOD_NAME}";
         public const string MOD_NAME = "Dual Wielder";
-        public const string MOD_VERSION = "0.1.0";
+        public const string MOD_VERSION = "0.1.2";
 
         public Main() : base(MOD_GUID, MOD_NAME, MOD_VERSION, Assembly.GetExecutingAssembly())
         {
